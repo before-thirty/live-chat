@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+  schema   = "app_chat"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String     @id @default(uuid())
+  name        String
+  email       String     @unique
+  phoneNumber String     @unique
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  contents    Content[]
+  Message     ChatMessage[]
+  tripUsers   TripUser[]
+}
+
+model Trip {
+  id          String     @id @default(uuid())
+  name        String
+  startDate   DateTime
+  endDate     DateTime
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  contents    Content[]
+  Message     ChatMessage[]
+  tripUsers   TripUser[]
+}
+
+model TripUser {
+  id        String   @id @default(uuid())
+  tripId    String
+  userId    String
+  role      String
+  createdAt DateTime @default(now())
+  trip      Trip     @relation(fields: [tripId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([tripId, userId])
+}
+
+model Content {
+  id             String   @id @default(uuid())
+  url            String
+  rawData        String
+  structuredData String
+  userId         String
+  tripId         String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  trip           Trip     @relation(fields: [tripId], references: [id])
+  user           User     @relation(fields: [userId], references: [id])
+  pins           Pin[]
+}
+
+model Pin {
+  id           String      @id @default(uuid())
+  name         String
+  category     String
+  description  String?
+  contentId    String
+  placeCacheId String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  content      Content     @relation(fields: [contentId], references: [id])
+  placeCache   PlaceCache? @relation(fields: [placeCacheId], references: [id])
+}
+
+model PlaceCache {
+  id                  String   @id @default(uuid())
+  placeId             String   @unique
+  name                String?
+  rating              Float?
+  userRatingCount     Int?
+  websiteUri          String?
+  currentOpeningHours Json?
+  regularOpeningHours Json?
+  lat                 Float
+  lng                 Float
+  createdAt           DateTime @default(now())
+  lastCached          DateTime
+  images              String[]
+  pins                Pin[]
+}
+
+model ChatMessage {
+  id        String   @id
+  userId    String
+  text      String
+  createdAt DateTime @default(now())
+  type      String   @default("text")
+  fileUrl   String?
+  fileName  String?
+  tripId    String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+}
